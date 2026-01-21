@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>La Fortaleza del Equipo: Constructores de la Concordia</title>
+  <meta name="description" content="Simulación de chat para ciudadanía digital. Nivel progresivo con temporizador." />
+  <style>
+    /* ==================== ESTILOS GENERALES ==================== */
+    :root{
+      --bg:#0b1020;          
+      --panel:#141a33;
+      --text:#ffffff;
+      --muted:#cbd5e1;
+      --accent:#22d3ee;      
+      --accent-2:#a78bfa;    
+      --good:#10b981;        
+      --bad:#ef4444;         
+      --warning:#f59e0b;     
+      --bubble-ana:#0ea5e9;  
+      --bubble-leo:#f97316;  
+      --bubble-mentor:#a78bfa;
+      --ui:#1f2937;          
+      --heart:#ff477e;       
+      --focus:#fef08a;       
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:linear-gradient(180deg,var(--bg),#060913);
+      color:var(--text); font-family:system-ui,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;
+      font-size:18px; line-height:1.35; overflow:hidden;
+    }
+    button{font:inherit}
+    .app{
+      height:100%; display:grid; grid-template-rows:auto 1fr auto; gap:8px; padding:12px; max-width:1200px; margin:0 auto;
+    }
+    
+    /* HEADER */
+    header{
+      display:flex; gap:12px; align-items:center; justify-content:space-between; padding:10px 12px; border-radius:14px; background:linear-gradient(135deg,var(--panel),#0f1430);
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+    }
+    header h1{font-size:20px; margin:0}
+    .level-badge { background: var(--accent); color: #000; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 14px; margin-left: 10px; }
+    header .meta{font-size:14px; color:var(--muted)}
+
+    .main{display:grid; grid-template-columns: 1.1fr 1fr; gap:12px; min-height:0}
+
+    /* CHAT */
+    .chat{
+      background:linear-gradient(180deg,#121634,#0d1230); border-radius:14px; padding:12px; display:grid; grid-template-rows: auto 1fr auto; gap:10px; min-height:0; position: relative;
+    }
+    .chat h2{margin:0; font-size:18px}
+    .log{overflow:auto; padding-right:6px; scrollbar-width:thin}
+    .msg{display:flex; align-items:flex-start; gap:10px; margin:10px 0; opacity:0; transform:translateY(6px); animation:pop .45s ease forwards}
+    .avatar{width:36px;height:36px;border-radius:50%; display:grid;place-items:center; font-weight:700; color:#000; flex-shrink: 0;}
+    .bubble{padding:10px 12px; border-radius:14px; max-width:85%; box-shadow:0 6px 18px rgba(0,0,0,.25)}
+    .name{font-size:12px; opacity:.9; display:block; margin-bottom:2px}
+    .mood{margin-left:6px; font-size:18px}
+    
+    .msg.ana .avatar{background:var(--bubble-ana)}
+    .msg.leo .avatar{background:var(--bubble-leo)}
+    .msg.mentor .avatar{background:var(--bubble-mentor)}
+    
+    .msg.ana .bubble{background:rgba(14,165,233,.18); border:1px solid rgba(14,165,233,.6)}
+    .msg.leo .bubble{background:rgba(249,115,22,.14); border:1px solid rgba(249,115,22,.55)}
+    .msg.mentor .bubble{background:rgba(167,139,250,.18); border:1px solid rgba(167,139,250,.55)}
+
+    @keyframes pop{to{opacity:1; transform:translateY(0)}}
+
+    /* TEMPORIZADOR */
+    .timer-container {
+      height: 6px; background: #1f2937; border-radius: 3px; overflow: hidden; margin-bottom: 5px; display: none;
+    }
+    .timer-container.active { display: block; }
+    .timer-bar {
+      height: 100%; width: 100%; background: var(--good);
+      transition: width 0.1s linear, background 0.3s;
+    }
+    .timer-bar.warning { background: var(--warning); }
+    .timer-bar.danger { background: var(--bad); }
+
+    /* OPCIONES */
+    .choices{display:grid; gap:8px; grid-auto-rows:minmax(48px,auto)}
+    .choice{
+      background:linear-gradient(135deg,#0d142b,#0e1a3a); border:2px solid #263256; color:var(--text); border-radius:12px; padding:10px 12px; text-align:left;
+      cursor:pointer; transition:transform .06s ease, border-color .2s ease, box-shadow .2s ease; outline:none;
+    }
+    .choice:hover, .choice:focus{transform:translateY(-1px); border-color:var(--accent); box-shadow:0 0 0 3px rgba(34,211,238,.3)}
+    .choice[disabled]{opacity:.6; cursor:not-allowed}
+
+    /* DERECHA */
+    .right{
+      display:grid; grid-template-rows: auto 1fr; gap:10px; min-height:0;
+    }
+    .status{
+      background:linear-gradient(135deg,var(--panel),#0f1333); border-radius:14px; padding:10px; display:flex; align-items:center; gap:12px; flex-wrap:wrap
+    }
+    .heart-wrap{position:relative; width:80px; height:80px}
+    .heart{
+      width:100%; height:100%; filter:drop-shadow(0 8px 18px rgba(255,71,126,.35));
+    }
+    .moral-data { display: flex; flex-direction: column; }
+    .moral-num{font-weight:800; font-size:24px}
+    .score{font-size:14px; color:var(--accent)}
+    .tts{
+      margin-left:auto; display:flex; gap:8px; align-items:center
+    }
+    .toggle{
+      background:#0c1227; border:2px solid #293056; border-radius:10px; padding:6px 10px; cursor:pointer; font-size: 14px;
+    }
+
+    .board{
+      background:radial-gradient(1200px 400px at 50% 120%, rgba(34,211,238,.08), transparent 60%), linear-gradient(180deg,#091024,#0a0f22);
+      border-radius:14px; position:relative; overflow:hidden; padding:10px; display:grid; grid-template-rows:auto 1fr; gap:6px; min-height:0
+    }
+    .board h2{margin:0; font-size:18px}
+    canvas#fort{width:100%; height:100%; background:linear-gradient(180deg,#0b122a 0%, #0f172a 60%, #1f2937 60%, #111827 100%); border-radius:10px}
+
+    footer{
+      display:flex; gap:8px; align-items:center; justify-content:center; padding:8px; color:var(--muted); font-size:14px
+    }
+
+    /* MODALES */
+    .overlay{position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,.8); z-index: 100;}
+    .overlay.active{display:grid}
+    .modal{background:linear-gradient(135deg,#10163a,#0e1333); border:2px solid #293056; border-radius:16px; padding:24px; max-width:680px; width:92vw; color:var(--text); box-shadow:0 20px 50px rgba(0,0,0,.5)}
+    .modal h3{margin-top:0; font-size: 24px; color: var(--accent);}
+    .modal p { font-size: 18px; line-height: 1.5; }
+    .modal .row{display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top: 20px;}
+    .modal .btn{background:#0c1227; border:2px solid var(--accent); color: var(--accent); padding:12px 20px; border-radius:10px; cursor:pointer; font-weight: bold; text-transform: uppercase;}
+    .modal .btn:hover { background: var(--accent); color: #000; }
+    .eval-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #293056; }
+    .eval-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .eval-total { border-top: 1px solid #444; padding-top: 8px; font-weight: bold; color: var(--accent); font-size: 20px; }
+
+    :focus-visible{outline:3px dashed var(--focus); outline-offset:2px}
+  </style>
+</head>
+<body>
+<div class="app" role="application" aria-label="La Fortaleza del Equipo">
+  <header>
+    <div style="display:flex; align-items:center">
+      <h1>La Fortaleza del Equipo</h1>
+      <span class="level-badge" id="levelBadge">Nivel 1</span>
+    </div>
+    <div class="meta">Juega con teclado: <strong>Tab</strong> y <strong>Enter</strong></div>
+  </header>
+
+  <div class="main" aria-live="polite">
+    <!-- Chat -->
+    <section class="chat" aria-label="Chat grupal">
+      <h2>Chat del Equipo</h2>
+      <div id="log" class="log" role="log" aria-live="polite"></div>
+      
+      <!-- Temporizador -->
+      <div class="timer-container" id="timerContainer">
+        <div class="timer-bar" id="timerBar"></div>
+      </div>
+      
+      <div class="choices" id="choices" role="group" aria-label="Opciones"></div>
+    </section>
+
+    <!-- Derecho -->
+    <section class="right">
+      <div class="status" aria-label="Estado">
+        <div class="heart-wrap" title="Medidor de Moral">
+          <svg class="heart" viewBox="0 0 100 90" aria-hidden="true">
+            <defs>
+              <clipPath id="clip">
+                <path d="M50 82 L18 50 C4 36 7 17 22 11 c12-5 23 1 28 10 c5-9 16-15 28-10 c15 6 18 25 4 39 z"/>
+              </clipPath>
+              <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#ffd1e0"/>
+                <stop offset="100%" stop-color="var(--heart)"/>
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="100" height="90" fill="#2b314f" clip-path="url(#clip)"></rect>
+            <rect id="fill" x="0" y="90" width="100" height="90" fill="url(#g)" clip-path="url(#clip)"></rect>
+            <path d="M50 82 L18 50 C4 36 7 17 22 11 c12-5 23 1 28 10 c5-9 16-15 28-10 c15 6 18 25 4 39 z" stroke="#ff7aa6" stroke-width="2" fill="transparent"/>
+          </svg>
+        </div>
+        <div class="moral-data">
+          <div class="moral-num" id="moralNum">Moral: 100%</div>
+          <div class="score" id="scoreDisp">Aciertos: 0/0</div>
+        </div>
+        <div class="tts">
+          <!-- VOZ DESACTIVADA POR DEFECTO -->
+          <button id="voiceBtn" class="toggle" aria-pressed="false">🔇 Voz</button>
+          <button id="sfxBtn" class="toggle" aria-pressed="true">🎵 FX</button>
+        </div>
+      </div>
+      <div class="board">
+        <h2>Fortaleza Digital</h2>
+        <canvas id="fort" width="800" height="520" role="img"></canvas>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <span>Mejoras: Audio completo (Opcional), Niveles de dificultad, Temporizador y Evaluación clara.</span>
+  </footer>
+</div>
+
+<!-- Overlay final -->
+<div id="overlay" class="overlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-labelledby="endTitle">
+    <h3 id="endTitle">Resultados</h3>
+    <div class="eval-box">
+      <div class="eval-row"><span>Dilemas Totales:</span> <span id="evalTotal">3</span></div>
+      <div class="eval-row"><span>Respuestas Correctas:</span> <span id="evalCorrect" style="color:var(--good)">0</span></div>
+      <div class="eval-row"><span>Moral Restante:</span> <span id="evalMoral">100%</span></div>
+      <div class="eval-total">Calificación Final: <span id="evalGrade">0%</span></div>
+    </div>
+    <p id="endDesc"></p>
+    <div class="row">
+      <button class="btn" id="nextLevelBtn" style="display:none">🚀 Siguiente Nivel (+Velocidad)</button>
+      <button class="btn" id="retryBtn">🔄 Reintentar Nivel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =============================================================
+   LÓGICA DEL JUEGO MEJORADA
+   ============================================================= */
+
+const state = {
+  moral: 100,
+  nivel: 1,
+  aciertos: 0,
+  dilemasVistos: 0,
+  voz: false, // <--- VOZ DESACTIVADA POR DEFAULT
+  sfx: true,
+  enTutorial: true,
+  paso: 0,
+  timeLimitBase: 15000, 
+  timeLimitActual: 15000,
+  timerId: null
+};
+
+// --- DATOS: DILEMAS ---
+const DILEMMAS = [
+  {
+    id: 1,
+    titulo: "Dilema 1: El Error Constructivo",
+    intro: "Ana colocó mal un bloque y la estructura se ve rara. Leo reacciona rápido.",
+    dialogo: [
+      { who: 'ana', text: 'Chicos, creo que puse la torre al revés... lo siento 😰', mood:'😟' },
+      { who: 'leo', text: '¡Ay no! ¡Qué desastre! Siempre arruinas todo, Ana.', mood:'😠' },
+    ],
+    opciones: [
+      { key:'A', text:'"Leo tiene razón, Ana fíjate mejor la próxima vez."', efecto:-15, tipo:'exclusion', feedback:'err' },
+      { key:'B', text:'"¡Cállate Leo! Eres insoportable."', efecto:-20, tipo:'agresion', feedback:'err' },
+      { key:'C', text:'"Tranquilos. Un error lo tiene cualquiera. Leo, no seas duro; Ana, ¿podemos arreglarlo juntos?"', efecto:+5, tipo:'empatia', feedback:'ok' },
+    ]
+  },
+  {
+    id: 2,
+    titulo: "Dilema 2: Creatividad vs Lógica",
+    intro: "Ana quiere añadir un elemento decorativo. Leo piensa que es una pérdida de tiempo.",
+    dialogo: [
+      { who: 'ana', text: '¡Se me ocurrió poner gárgolas de neón en la entrada! ✨', mood:'🙂' },
+      { who: 'leo', text: 'Eso es ridículo e inútil. Solo necesitamos muros fuertes.', mood:'😑' },
+    ],
+    opciones: [
+      { key:'A', text:'"Sí Ana, deja de inventar cosas raras. Concéntrate."', efecto:-15, tipo:'exclusion', feedback:'err' },
+      { key:'B', text:'"Leo, tu idea de los muros es vital, pero la creatividad de Ana nos distingue. ¡Hagamos gárgolas que sirvan de vigilancia!"', efecto:+10, tipo:'empatia', feedback:'ok' },
+      { key:'C', text:'Ignorar a Leo y decirle a Ana que lo haga de todas formas.', efecto:-5, tipo:'agresion', feedback:'err' },
+    ]
+  },
+  {
+    id: 3,
+    titulo: "Dilema 3: Presión de Tiempo",
+    intro: "El reloj corre. Leo entra en pánico y empieza a dar órdenes agresivas.",
+    dialogo: [
+      { who: 'leo', text: '¡MUEVANSE! ¡Son demasiado lentos! ¡Vamos a perder por su culpa! 😡', mood:'😤' },
+      { who: 'ana', text: '¡No me grites! Me pones nerviosa y trabajo peor.', mood:'😞' },
+    ],
+    opciones: [
+      { key:'A', text:'"¡Ya basta los dos! ¡Parecen bebés peleando!"', efecto:-10, tipo:'agresion', feedback:'err' },
+      { key:'B', text:'No decir nada y seguir construyendo para acabar rápido.', efecto:-10, tipo:'exclusion', feedback:'err' },
+      { key:'C', text:'"Equipo, respiren. La presión es alta pero si nos gritamos fallaremos. Leo, calma. Ana, tú puedes. ¡Vamos paso a paso!"', efecto:+10, tipo:'empatia', feedback:'ok' },
+    ]
+  },
+];
+
+// --- ELEMENTOS UI ---
+const logEl = document.getElementById('log');
+const choicesEl = document.getElementById('choices');
+const moralNumEl = document.getElementById('moralNum');
+const scoreDispEl = document.getElementById('scoreDisp');
+const heartFill = document.getElementById('fill');
+const timerContainer = document.getElementById('timerContainer');
+const timerBar = document.getElementById('timerBar');
+const overlay = document.getElementById('overlay');
+const levelBadge = document.getElementById('levelBadge');
+
+// Canvas
+const canvas = document.getElementById('fort');
+const ctx = canvas.getContext('2d');
+let animId;
+
+// --- SISTEMA DE AUDIO (COLA) ---
+let speechQueue = [];
+let isSpeaking = false;
+
+function queueSpeak(text) {
+  if(!state.voz || !('speechSynthesis' in window)) return;
+  speechQueue.push(text);
+  processSpeechQueue();
+}
+
+function processSpeechQueue() {
+  if(isSpeaking || speechQueue.length === 0) return;
+  
+  isSpeaking = true;
+  const text = speechQueue.shift();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'es-MX';
+  u.rate = 1.1; 
+  
+  u.onend = () => {
+    isSpeaking = false;
+    processSpeechQueue();
+  };
+  u.onerror = () => {
+    isSpeaking = false; 
+    processSpeechQueue();
+  };
+  
+  speechSynthesis.speak(u);
+}
+
+// Sonidos FX
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function playTone(freq, type, dur){
+  if(!state.sfx) return;
+  if(!audioCtx) audioCtx = new AudioCtx();
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = type; o.frequency.value = freq;
+  o.connect(g).connect(audioCtx.destination);
+  o.start();
+  g.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + dur);
+  o.stop(audioCtx.currentTime + dur + 0.1);
+}
+function beepOk(){ playTone(600, 'sine', 0.1); setTimeout(()=>playTone(900,'sine',0.2), 100); }
+function beepErr(){ playTone(150, 'sawtooth', 0.3); }
+
+// --- LÓGICA DE JUEGO ---
+
+function addMsg(who, text, mood=''){ 
+  const div = document.createElement('div');
+  div.className = `msg ${who}`;
+  
+  let avatarTxt = 'M';
+  let nameTxt = 'Mentora';
+  if(who==='ana'){ avatarTxt='A'; nameTxt='Ana'; }
+  if(who==='leo'){ avatarTxt='L'; nameTxt='Leo'; }
+
+  div.innerHTML = `
+    <div class="avatar">${avatarTxt}</div>
+    <div class="bubble">
+      <span class="name">${nameTxt}</span>
+      <div>${text}</div>
+    </div>
+    <span class="mood">${mood}</span>
+  `;
+  
+  logEl.appendChild(div);
+  logEl.scrollTop = logEl.scrollHeight;
+  
+  queueSpeak(`${nameTxt} dice: ${text}`);
+}
+
+function startTimer() {
+  stopTimer();
+  timerContainer.classList.add('active');
+  timerBar.className = 'timer-bar'; 
+  timerBar.style.width = '100%';
+  
+  let start = Date.now();
+  
+  state.timerId = setInterval(() => {
+    let elapsed = Date.now() - start;
+    let pct = 100 - (elapsed / state.timeLimitActual) * 100;
+    
+    if(pct <= 0) {
+      stopTimer();
+      timerBar.style.width = '0%';
+      handleTimeout();
+    } else {
+      timerBar.style.width = pct + '%';
+      if(pct < 40) timerBar.classList.add('warning');
+      if(pct < 20) timerBar.classList.add('danger');
+    }
+  }, 50);
+}
+
+function stopTimer() {
+  clearInterval(state.timerId);
+  timerContainer.classList.remove('active');
+}
+
+function handleTimeout() {
+  beepErr();
+  addMsg('mentor', '¡El tiempo se agotó! La indecisión dañó la confianza del equipo.', '⏳');
+  state.moral = Math.max(0, state.moral - 15);
+  updateHUD();
+  
+  setTimeout(() => {
+    state.dilemasVistos++;
+    nextStep();
+  }, 2000);
+}
+
+function showChoices(opciones){
+  choicesEl.innerHTML = '';
+  if(!state.enTutorial && opciones.length > 1) {
+    startTimer();
+  }
+
+  opciones.forEach((opt, idx)=>{
+    const btn = document.createElement('button');
+    btn.className='choice';
+    btn.textContent = `${opt.key}) ${opt.text}`;
+    btn.onclick = () => choose(opt);
+    choicesEl.appendChild(btn);
+  });
+}
+
+function choose(opt){
+  stopTimer(); 
+  
+  const btns = choicesEl.querySelectorAll('button');
+  btns.forEach(b => b.disabled = true);
+
+  state.moral = Math.max(0, Math.min(100, state.moral + opt.efecto));
+  state.dilemasVistos++;
+  
+  if(opt.feedback === 'ok') {
+    state.aciertos++;
+    beepOk();
+    addMsg('mentor', '¡Excelente! Esa respuesta fortalece al equipo.', '🌟');
+  } else {
+    beepErr();
+    addMsg('mentor', 'Cuidado, esa respuesta ha generado fricción.', '💔');
+  }
+  
+  updateHUD();
+  setTimeout(nextStep, 1500);
+}
+
+function updateHUD(){
+  moralNumEl.textContent = `Moral: ${state.moral}%`;
+  scoreDispEl.textContent = `Aciertos: ${state.aciertos}/${state.dilemasVistos}`;
+  
+  const maxH = 90;
+  const fillH = (state.moral/100)*maxH;
+  heartFill.setAttribute('y', 90 - fillH);
+  heartFill.setAttribute('height', fillH);
+}
+
+function runDilemma(i){
+  state.paso = i;
+  const d = DILEMMAS[i];
+  
+  addMsg('mentor', `Dilema ${i+1}: ${d.titulo}. ${d.intro}`, '🧩');
+  
+  let delay = 1000;
+  
+  d.dialogo.forEach((line) => {
+    setTimeout(() => {
+      addMsg(line.who, line.text, line.mood);
+    }, delay);
+    delay += 2500;
+  });
+
+  setTimeout(() => {
+    if(state.voz) queueSpeak("¿Qué deberías responder?");
+    showChoices(d.opciones);
+  }, delay + 500);
+}
+
+function nextStep(){
+  if(state.enTutorial){
+    state.enTutorial = false;
+    choicesEl.innerHTML = '';
+    runDilemma(0);
+    return;
+  }
+  
+  const next = state.paso + 1;
+  if(state.moral <= 0) {
+    endGame(false);
+  } else if(next < DILEMMAS.length){
+    runDilemma(next);
+  } else {
+    endGame(true);
+  }
+}
+
+// --- EVALUACIÓN Y NIVELES ---
+
+function endGame(completed){
+  stopTimer();
+  
+  const total = DILEMMAS.length;
+  const percent = Math.round((state.aciertos / total) * 100);
+  const passed = completed && percent >= 60; 
+
+  overlay.classList.add('active');
+  overlay.setAttribute('aria-hidden','false');
+
+  document.getElementById('evalTotal').textContent = total;
+  document.getElementById('evalCorrect').textContent = state.aciertos;
+  document.getElementById('evalMoral').textContent = state.moral + '%';
+  document.getElementById('evalGrade').textContent = percent + '%';
+
+  const titleEl = document.getElementById('endTitle');
+  const descEl = document.getElementById('endDesc');
+  const nextBtn = document.getElementById('nextLevelBtn');
+
+  if(passed){
+    titleEl.textContent = `¡Misión Cumplida! (Nivel ${state.nivel})`;
+    titleEl.style.color = 'var(--good)';
+    descEl.textContent = "Has demostrado ser un gran líder empático. El equipo completó la fortaleza gracias a tu gestión.";
+    queueSpeak("¡Felicidades! Has completado la misión con éxito.");
+    
+    nextBtn.style.display = 'inline-block';
+    nextBtn.onclick = () => {
+      state.nivel++;
+      state.timeLimitActual = Math.max(5000, state.timeLimitBase * Math.pow(0.85, state.nivel - 1));
+      resetGame(false);
+    };
+  } else {
+    titleEl.textContent = "Misión Fallida";
+    titleEl.style.color = 'var(--bad)';
+    if(state.moral <= 0) descEl.textContent = "La moral del equipo se rompió. Sin respeto no hay construcción.";
+    else descEl.textContent = "Llegaste al final, pero tus decisiones no fueron lo suficientemente empáticas (Nota baja).";
+    
+    queueSpeak("Misión fallida. Intenta mejorar tu empatía la próxima vez.");
+    nextBtn.style.display = 'none';
+  }
+  
+  document.getElementById('retryBtn').onclick = () => resetGame(true);
+}
+
+function resetGame(fullReset = true){
+  overlay.classList.remove('active');
+  logEl.innerHTML = '';
+  choicesEl.innerHTML = '';
+  
+  if(fullReset) {
+    state.nivel = 1;
+    state.timeLimitActual = state.timeLimitBase;
+  }
+  
+  levelBadge.textContent = `Nivel ${state.nivel}`;
+
+  state.moral = 100;
+  state.aciertos = 0;
+  state.dilemasVistos = 0;
+  state.enTutorial = true;
+  state.paso = 0;
+  
+  updateHUD();
+  drawFort();
+  startTutorial();
+}
+
+function startTutorial(){
+  addMsg('mentor', `¡Bienvenido al Nivel ${state.nivel}!`);
+  addMsg('mentor', 'Tu misión: Elegir respuestas empáticas antes de que se agote el tiempo.');
+  
+  let secs = Math.round(state.timeLimitActual/1000);
+  addMsg('mentor', `Tienes ${secs} segundos por dilema. ¡Suerte!`);
+  
+  queueSpeak("Bienvenido. Elige sabiamente y rápido.");
+
+  showChoices([{key:'▶', text:'Comenzar', efecto:0, feedback:'neutral'}]);
+}
+
+// --- CANVAS (Gráficos) ---
+function drawFort(){
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  
+  ctx.fillStyle = '#0a0f22';
+  ctx.fillRect(0, h*0.6, w, h*0.4); 
+
+  const steps = DILEMMAS.length;
+  
+  if(state.moral > 0){
+    const baseW = 400; 
+    const x = (w - baseW)/2;
+    const y = h * 0.6;
+    
+    ctx.fillStyle = '#374151';
+    ctx.fillRect(x, y - 20, baseW, 20);
+
+    if(state.paso >= 0) { 
+      ctx.fillStyle = '#1e3a8a';
+      ctx.fillRect(x, y-120, 80, 100);
+    }
+    if(state.paso >= 1) { 
+      ctx.fillStyle = '#1e3a8a';
+      ctx.fillRect(x+baseW-80, y-120, 80, 100);
+    }
+    if(state.paso >= 2) { 
+      ctx.fillStyle = '#1d4ed8';
+      ctx.fillRect(x+80, y-80, baseW-160, 60);
+    }
+    if(state.paso >= 2 && state.moral > 50) {
+      ctx.fillStyle = '#60a5fa';
+      ctx.fillRect(x+150, y-200, 100, 120);
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath(); ctx.moveTo(x+200, y-220); ctx.lineTo(x+250, y-200); ctx.lineTo(x+200, y-180); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.fillRect(x+198, y-220, 4, 100);
+    }
+  }
+
+  animId = requestAnimationFrame(drawFort);
+}
+
+// --- INIT ---
+document.getElementById('voiceBtn').onclick = () => {
+  state.voz = !state.voz;
+  document.getElementById('voiceBtn').textContent = state.voz ? '🔊 Voz' : '🔇 Voz';
+  if(!state.voz) speechSynthesis.cancel();
+};
+document.getElementById('sfxBtn').onclick = () => {
+  state.sfx = !state.sfx;
+  document.getElementById('sfxBtn').textContent = state.sfx ? '🎵 FX' : '🔕 FX';
+};
+document.getElementById('nextLevelBtn').onclick = () => { /* manejado en endGame */ };
+
+// Start
+updateHUD();
+drawFort();
+startTutorial();
+
+</script>
+</body>
+</html>
